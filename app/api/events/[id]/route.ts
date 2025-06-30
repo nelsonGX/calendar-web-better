@@ -25,7 +25,8 @@ export async function DELETE(
   }
 
   try {
-    const eventId = parseInt(params.id);
+    const awaitedParams = await params;
+    const eventId = parseInt(awaitedParams.id);
     
     if (isNaN(eventId)) {
       return NextResponse.json(
