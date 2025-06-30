@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin, Key } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin, Key, Edit } from 'lucide-react';
 
 interface Event {
   id: number;
@@ -22,9 +22,11 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [events, setEvents] = useState<Record<string, Event[]>>({});
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showDayEventsModal, setShowDayEventsModal] = useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = useState<Event[]>([]);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [tempApiKey, setTempApiKey] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -195,6 +197,62 @@ const Calendar = () => {
       } catch (error) {
         console.error('Error creating event:', error);
       }
+    }
+  };
+
+  const handleEditEvent = (event: Event) => {
+    if (!isAdmin) return;
+    
+    setEditingEvent(event);
+    setEventForm({
+      title: event.title,
+      startTime: event.startTime || '',
+      endTime: event.endTime || '',
+      location: event.location || '',
+      description: event.description || '',
+      color: event.color,
+      endDate: event.endDate || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEvent = async () => {
+    if (!editingEvent || !eventForm.title || !isAdmin) return;
+
+    try {
+      const response = await fetch(`/api/events/${editingEvent.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify({
+          ...eventForm,
+          startDate: editingEvent.startDate,
+          endDate: eventForm.endDate || null
+        })
+      });
+
+      if (response.ok) {
+        await fetchEvents();
+        setEventForm({
+          title: '',
+          startTime: '',
+          endTime: '',
+          location: '',
+          description: '',
+          color: '#3b82f6',
+          endDate: ''
+        });
+        setEditingEvent(null);
+        setShowEditModal(false);
+        setShowEventModal(false);
+        setShowDayEventsModal(false);
+      } else {
+        console.error('Failed to update event');
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
     }
   };
 
@@ -383,12 +441,20 @@ const Calendar = () => {
                 )}
               </div>
               {isAdmin && (
-                <button
-                  onClick={() => handleDeleteEvent(formatDateKey(selectedDate), event.id)}
-                  className="text-red-400 hover:text-red-300 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => handleEditEvent(event)}
+                    className="text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteEvent(formatDateKey(selectedDate), event.id)}
+                    className="text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               )}
               </div>
             </div>
@@ -465,6 +531,101 @@ const Calendar = () => {
         )}
         </div>
       </div>
+      )}
+
+      {/* Edit Event Modal */}
+      {showEditModal && editingEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-800 rounded-2xl p-6 max-w-md w-full shadow-2xl transform transition-all scale-100">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Edit className="w-5 h-5" />
+                Edit Event
+              </h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingEvent(null);
+                  setEventForm({
+                    title: '',
+                    startTime: '',
+                    endTime: '',
+                    location: '',
+                    description: '',
+                    color: '#3b82f6',
+                    endDate: ''
+                  });
+                }}
+                className="p-1 hover:bg-zinc-700 rounded-lg transition-colors text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Event title"
+                value={eventForm.title}
+                onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="time"
+                  placeholder="Start time"
+                  value={eventForm.startTime}
+                  onChange={(e) => setEventForm({ ...eventForm, startTime: e.target.value })}
+                  className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+                />
+                <input
+                  type="time"
+                  placeholder="End time"
+                  value={eventForm.endTime}
+                  onChange={(e) => setEventForm({ ...eventForm, endTime: e.target.value })}
+                  className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+                />
+              </div>
+              <input
+                type="date"
+                placeholder="End date (optional)"
+                value={eventForm.endDate}
+                onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })}
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+              />
+              <input
+                type="text"
+                placeholder="Location"
+                value={eventForm.location}
+                onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
+              />
+              <textarea
+                placeholder="Description"
+                value={eventForm.description}
+                onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-zinc-700 text-white placeholder-zinc-400"
+              />
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-zinc-200">Color:</label>
+                <input
+                  type="color"
+                  value={eventForm.color}
+                  onChange={(e) => setEventForm({ ...eventForm, color: e.target.value })}
+                  className="w-8 h-8 rounded cursor-pointer"
+                />
+              </div>
+              <button
+                onClick={handleUpdateEvent}
+                disabled={!eventForm.title}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Update Event
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* API Key Modal */}
@@ -564,15 +725,26 @@ const Calendar = () => {
                       )}
                     </div>
                     {isAdmin && (
-                      <button
-                        onClick={() => {
-                          handleDeleteEvent(formatDateKey(selectedDate), event.id);
-                          setShowDayEventsModal(false);
-                        }}
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => {
+                            handleEditEvent(event);
+                            setShowDayEventsModal(false);
+                          }}
+                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDeleteEvent(formatDateKey(selectedDate), event.id);
+                            setShowDayEventsModal(false);
+                          }}
+                          className="text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
