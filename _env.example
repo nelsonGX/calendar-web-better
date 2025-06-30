@@ -1,0 +1,5 @@
+# Database - Replace with your Supabase connection string
+DATABASE_URL=""
+
+# API Key for admin access
+API_KEY="your-secure-api-key-here"
