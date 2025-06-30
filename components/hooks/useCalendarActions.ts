@@ -160,7 +160,7 @@ export const useCalendarActions = (
   const handleQuickColorChange = async (
     event: Event,
     color: string,
-    setContextMenu: (menu: any) => void
+    setContextMenu: (menu: unknown) => void
   ) => {
     if (!isAdmin) return;
 
@@ -197,7 +197,7 @@ export const useCalendarActions = (
   const handleRightClick = (
     e: React.MouseEvent,
     event: Event,
-    setContextMenu: (menu: any) => void
+    setContextMenu: (menu: unknown) => void
   ) => {
     if (!isAdmin) return;
     
