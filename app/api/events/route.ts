@@ -39,33 +39,86 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, startTime, endTime, location, description, color, startDate, endDate } = body;
 
-    if (!title || !startDate) {
-      return NextResponse.json(
-        { error: 'Title and start date are required' },
-        { status: 400 }
-      );
-    }
+    if (Array.isArray(body)) {
+      const events = [];
+      const errors = [];
 
-    const event = await prisma.event.create({
-      data: {
-        title,
-        startTime: startTime || null,
-        endTime: endTime || null,
-        location: location || null,
-        description: description || null,
-        color: color || '#3b82f6',
-        startDate,
-        endDate: endDate || null
+      for (let i = 0; i < body.length; i++) {
+        const eventData = body[i];
+        
+        if (!eventData.title || !eventData.start_time) {
+          errors.push({
+            index: i,
+            error: 'Title and start_time are required',
+            data: eventData
+          });
+          continue;
+        }
+
+        try {
+          const startDateTime = new Date(eventData.start_time);
+          const endDateTime = eventData.end_time ? new Date(eventData.end_time) : null;
+          
+          const event = await prisma.event.create({
+            data: {
+              title: eventData.title,
+              startTime: startDateTime.toTimeString().slice(0, 5),
+              endTime: endDateTime ? endDateTime.toTimeString().slice(0, 5) : null,
+              location: eventData.location || null,
+              description: eventData.description || null,
+              color: eventData.color || '#3b82f6',
+              startDate: startDateTime.toISOString().slice(0, 10),
+              endDate: endDateTime ? endDateTime.toISOString().slice(0, 10) : null
+            }
+          });
+          
+          events.push(event);
+        } catch (eventError) {
+          errors.push({
+            index: i,
+            error: 'Failed to create event',
+            details: eventError instanceof Error ? eventError.message : 'Unknown error',
+            data: eventData
+          });
+        }
       }
-    });
 
-    return NextResponse.json(event, { status: 201 });
+      return NextResponse.json({
+        success: events.length,
+        failed: errors.length,
+        events,
+        errors
+      }, { status: 201 });
+    } else {
+      const { title, startTime, endTime, location, description, color, startDate, endDate } = body;
+
+      if (!title || !startDate) {
+        return NextResponse.json(
+          { error: 'Title and start date are required' },
+          { status: 400 }
+        );
+      }
+
+      const event = await prisma.event.create({
+        data: {
+          title,
+          startTime: startTime || null,
+          endTime: endTime || null,
+          location: location || null,
+          description: description || null,
+          color: color || '#3b82f6',
+          startDate,
+          endDate: endDate || null
+        }
+      });
+
+      return NextResponse.json(event, { status: 201 });
+    }
   } catch (error) {
-    console.error('Error creating event:', error);
+    console.error('Error creating event(s):', error);
     return NextResponse.json(
-      { error: 'Failed to create event' },
+      { error: 'Failed to create event(s)' },
       { status: 500 }
     );
   }
