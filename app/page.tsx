@@ -1,15 +1,18 @@
 "use client"
 
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin, Key } from 'lucide-react';
 
 interface Event {
   id: number;
   title: string;
-  time: string;
-  location: string;
-  description: string;
+  time: string | null;
+  location: string | null;
+  description: string | null;
   color: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const Calendar = () => {
@@ -17,6 +20,10 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [events, setEvents] = useState<Record<string, Event[]>>({});
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [tempApiKey, setTempApiKey] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [eventForm, setEventForm] = useState({
     title: '',
     time: '',
@@ -31,6 +38,54 @@ const Calendar = () => {
   ];
 
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const adminParam = urlParams.get('admin');
+    
+    if (adminParam === 'true') {
+      const storedApiKey = localStorage.getItem('calendar-api-key');
+      if (storedApiKey) {
+        setApiKey(storedApiKey);
+        setIsAdmin(true);
+      } else {
+        setShowApiKeyModal(true);
+      }
+    }
+    
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch('/api/events');
+      if (response.ok) {
+        const eventsData = await response.json();
+        const groupedEvents: Record<string, Event[]> = {};
+        
+        eventsData.forEach((event: Event) => {
+          if (!groupedEvents[event.date]) {
+            groupedEvents[event.date] = [];
+          }
+          groupedEvents[event.date].push(event);
+        });
+        
+        setEvents(groupedEvents);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    }
+  };
+
+  const handleApiKeySubmit = () => {
+    if (tempApiKey.trim()) {
+      setApiKey(tempApiKey);
+      localStorage.setItem('calendar-api-key', tempApiKey);
+      setIsAdmin(true);
+      setShowApiKeyModal(false);
+      setTempApiKey('');
+    }
+  };
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -68,41 +123,66 @@ const Calendar = () => {
   };
 
   const handleDateClick = (day: number | null | undefined) => {
-    if (day) {
+    if (day && isAdmin) {
       const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       setSelectedDate(clickedDate);
       setShowEventModal(true);
     }
   };
 
-  const handleAddEvent = () => {
-    if (selectedDate && eventForm.title) {
-      const dateKey = formatDateKey(selectedDate);
-      const newEvent = {
-        id: Date.now(),
-        ...eventForm
-      };
-      
-      setEvents(prev => ({
-        ...prev,
-        [dateKey]: [...(prev[dateKey] || []), newEvent]
-      }));
-      
-      setEventForm({
-        title: '',
-        time: '',
-        location: '',
-        description: '',
-        color: '#3b82f6'
-      });
-    }
-  }
+  const handleAddEvent = async () => {
+    if (selectedDate && eventForm.title && isAdmin) {
+      try {
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+          },
+          body: JSON.stringify({
+            ...eventForm,
+            date: formatDateKey(selectedDate)
+          })
+        });
 
-  const handleDeleteEvent = (dateKey: string, eventId: number) => {
-    setEvents(prev => ({
-      ...prev,
-      [dateKey]: prev[dateKey].filter(event => event.id !== eventId)
-    }));
+        if (response.ok) {
+          await fetchEvents();
+          setEventForm({
+            title: '',
+            time: '',
+            location: '',
+            description: '',
+            color: '#3b82f6'
+          });
+          setShowEventModal(false);
+        } else {
+          console.error('Failed to create event');
+        }
+      } catch (error) {
+        console.error('Error creating event:', error);
+      }
+    }
+  };
+
+  const handleDeleteEvent = async (dateKey: string, eventId: number) => {
+    if (!isAdmin) return;
+    
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-api-key': apiKey
+        }
+      });
+
+      if (response.ok) {
+        await fetchEvents();
+      } else {
+        console.error('Failed to delete event');
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
   };
 
   const isToday = (day: number | null) => {
@@ -118,7 +198,15 @@ const Calendar = () => {
     <div className="max-w-6xl mx-auto p-6 bg-zinc-900 rounded-2xl shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-      <h1 className="text-3xl font-bold text-white">Calendar</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-white">Calendar</h1>
+        {isAdmin && (
+          <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+            <Key className="w-3 h-3" />
+            Admin
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-4">
         <button
         onClick={handlePrevMonth}
@@ -159,7 +247,8 @@ const Calendar = () => {
           onClick={() => handleDateClick(day)}
           className={`
           min-h-24 p-2 border rounded-lg transition-all duration-200
-          ${day ? 'hover:bg-zinc-800 cursor-pointer hover:shadow-md' : ''}
+          ${day && isAdmin ? 'hover:bg-zinc-800 cursor-pointer hover:shadow-md' : ''}
+          ${day && !isAdmin ? 'cursor-default' : ''}
           ${isToday(day) ? 'bg-blue-900 border-blue-400' : 'border-zinc-700'}
           `}
         >
@@ -245,12 +334,14 @@ const Calendar = () => {
                 <p className="text-sm text-zinc-300 mt-1">{event.description}</p>
                 )}
               </div>
-              <button
-                onClick={() => handleDeleteEvent(formatDateKey(selectedDate), event.id)}
-                className="text-red-400 hover:text-red-300 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => handleDeleteEvent(formatDateKey(selectedDate), event.id)}
+                  className="text-red-400 hover:text-red-300 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
               </div>
             </div>
             ))}
@@ -259,6 +350,7 @@ const Calendar = () => {
         )}
 
         {/* Add Event Form */}
+        {isAdmin && (
         <div className="space-y-3">
           <h4 className="font-semibold text-zinc-200">Add New Event</h4>
           <input
@@ -286,7 +378,6 @@ const Calendar = () => {
           value={eventForm.description}
           onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
           className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-zinc-700 text-white placeholder-zinc-400"
-          rows="2"
           />
           <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-zinc-200">Color:</label>
@@ -306,8 +397,53 @@ const Calendar = () => {
           Add Event
           </button>
         </div>
+        )}
         </div>
       </div>
+      )}
+
+      {/* API Key Modal */}
+      {showApiKeyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-800 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Key className="w-5 h-5" />
+                Admin Access
+              </h3>
+            </div>
+            <p className="text-zinc-300 mb-4">Enter your API key to access admin features:</p>
+            <div className="space-y-4">
+              <input
+                type="password"
+                placeholder="API Key"
+                value={tempApiKey}
+                onChange={(e) => setTempApiKey(e.target.value)}
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
+                onKeyPress={(e) => e.key === 'Enter' && handleApiKeySubmit()}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleApiKeySubmit}
+                  disabled={!tempApiKey.trim()}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed"
+                >
+                  Submit
+                </button>
+                <button
+                  onClick={() => {
+                    setShowApiKeyModal(false);
+                    setTempApiKey('');
+                    window.history.replaceState({}, '', window.location.pathname);
+                  }}
+                  className="flex-1 bg-zinc-600 text-white py-2 rounded-lg hover:bg-zinc-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
