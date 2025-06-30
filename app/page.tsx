@@ -6,11 +6,13 @@ import { ChevronLeft, ChevronRight, Plus, X, Clock, MapPin, Key } from 'lucide-r
 interface Event {
   id: number;
   title: string;
-  time: string | null;
+  startTime: string | null;
+  endTime: string | null;
   location: string | null;
   description: string | null;
   color: string;
-  date: string;
+  startDate: string;
+  endDate: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,15 +23,19 @@ const Calendar = () => {
   const [events, setEvents] = useState<Record<string, Event[]>>({});
   const [showEventModal, setShowEventModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [showDayEventsModal, setShowDayEventsModal] = useState(false);
+  const [selectedDayEvents, setSelectedDayEvents] = useState<Event[]>([]);
   const [apiKey, setApiKey] = useState('');
   const [tempApiKey, setTempApiKey] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [eventForm, setEventForm] = useState({
     title: '',
-    time: '',
+    startTime: '',
+    endTime: '',
     location: '',
     description: '',
-    color: '#3b82f6'
+    color: '#3b82f6',
+    endDate: ''
   });
 
   const monthNames = [
@@ -64,10 +70,28 @@ const Calendar = () => {
         const groupedEvents: Record<string, Event[]> = {};
         
         eventsData.forEach((event: Event) => {
-          if (!groupedEvents[event.date]) {
-            groupedEvents[event.date] = [];
+          // Add event to start date
+          if (!groupedEvents[event.startDate]) {
+            groupedEvents[event.startDate] = [];
           }
-          groupedEvents[event.date].push(event);
+          groupedEvents[event.startDate].push(event);
+          
+          // If multi-day event, add to all dates in range
+          if (event.endDate && event.endDate !== event.startDate) {
+            const startDate = new Date(event.startDate);
+            const endDate = new Date(event.endDate);
+            const currentDate = new Date(startDate);
+            currentDate.setDate(currentDate.getDate() + 1);
+            
+            while (currentDate <= endDate) {
+              const dateKey = currentDate.toISOString().split('T')[0];
+              if (!groupedEvents[dateKey]) {
+                groupedEvents[dateKey] = [];
+              }
+              groupedEvents[dateKey].push(event);
+              currentDate.setDate(currentDate.getDate() + 1);
+            }
+          }
         });
         
         setEvents(groupedEvents);
@@ -130,6 +154,13 @@ const Calendar = () => {
     }
   };
 
+  const handleShowDayEvents = (day: number, dayEvents: Event[]) => {
+    const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    setSelectedDate(clickedDate);
+    setSelectedDayEvents(dayEvents);
+    setShowDayEventsModal(true);
+  };
+
   const handleAddEvent = async () => {
     if (selectedDate && eventForm.title && isAdmin) {
       try {
@@ -141,7 +172,8 @@ const Calendar = () => {
           },
           body: JSON.stringify({
             ...eventForm,
-            date: formatDateKey(selectedDate)
+            startDate: formatDateKey(selectedDate),
+            endDate: eventForm.endDate || null
           })
         });
 
@@ -149,10 +181,12 @@ const Calendar = () => {
           await fetchEvents();
           setEventForm({
             title: '',
-            time: '',
+            startTime: '',
+            endTime: '',
             location: '',
             description: '',
-            color: '#3b82f6'
+            color: '#3b82f6',
+            endDate: ''
           });
           setShowEventModal(false);
         } else {
@@ -261,17 +295,26 @@ const Calendar = () => {
             {dayEvents.slice(0, 3).map(event => (
               <div
               key={event.id}
-              className="text-xs p-1 rounded truncate hover:opacity-80 transition-opacity"
+              className="text-xs p-1 rounded truncate hover:opacity-80 transition-opacity cursor-pointer"
               style={{ backgroundColor: event.color + '40', color: event.color }}
               onClick={(e) => {
                 e.stopPropagation();
+                handleShowDayEvents(day, dayEvents);
               }}
               >
               {event.title}
+              {event.startTime && ` ${event.startTime}`}
+              {event.endTime && event.endTime !== event.startTime && `-${event.endTime}`}
               </div>
             ))}
             {dayEvents.length > 3 && (
-              <div className="text-xs text-zinc-400">
+              <div 
+                className="text-xs text-zinc-400 hover:text-zinc-300 cursor-pointer transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShowDayEvents(day, dayEvents);
+                }}
+              >
               +{dayEvents.length - 3} more
               </div>
             )}
@@ -318,10 +361,15 @@ const Calendar = () => {
               <div className="flex justify-between items-start">
               <div className="flex-1">
                 <h5 className="font-semibold text-white">{event.title}</h5>
-                {event.time && (
+                {(event.startTime || event.endTime) && (
                 <p className="text-sm text-zinc-300 flex items-center gap-1 mt-1">
                   <Clock className="w-3 h-3" />
-                  {event.time}
+                  {event.startTime}{event.endTime && event.endTime !== event.startTime && ` - ${event.endTime}`}
+                </p>
+                )}
+                {event.endDate && event.endDate !== event.startDate && (
+                <p className="text-sm text-zinc-300">
+                  Until: {new Date(event.endDate).toLocaleDateString()}
                 </p>
                 )}
                 {event.location && (
@@ -360,10 +408,27 @@ const Calendar = () => {
           onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
           className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
           />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+            type="time"
+            placeholder="Start time"
+            value={eventForm.startTime}
+            onChange={(e) => setEventForm({ ...eventForm, startTime: e.target.value })}
+            className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+            />
+            <input
+            type="time"
+            placeholder="End time"
+            value={eventForm.endTime}
+            onChange={(e) => setEventForm({ ...eventForm, endTime: e.target.value })}
+            className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+            />
+          </div>
           <input
-          type="time"
-          value={eventForm.time}
-          onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
+          type="date"
+          placeholder="End date (optional)"
+          value={eventForm.endDate}
+          onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })}
           className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
           />
           <input
@@ -441,6 +506,77 @@ const Calendar = () => {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Day Events Modal */}
+      {showDayEventsModal && selectedDate && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-800 rounded-2xl p-6 max-w-md w-full max-h-96 overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white">
+                {selectedDate.toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </h3>
+              <button
+                onClick={() => setShowDayEventsModal(false)}
+                className="p-1 hover:bg-zinc-700 rounded-lg transition-colors text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {selectedDayEvents.map(event => (
+                <div
+                  key={event.id}
+                  className="p-3 rounded-lg border border-zinc-600 bg-zinc-700"
+                  style={{ borderLeftColor: event.color, borderLeftWidth: '4px' }}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h5 className="font-semibold text-white">{event.title}</h5>
+                      {(event.startTime || event.endTime) && (
+                        <p className="text-sm text-zinc-300 flex items-center gap-1 mt-1">
+                          <Clock className="w-3 h-3" />
+                          {event.startTime}{event.endTime && event.endTime !== event.startTime && ` - ${event.endTime}`}
+                        </p>
+                      )}
+                      {event.endDate && event.endDate !== event.startDate && (
+                        <p className="text-sm text-zinc-300">
+                          Until: {new Date(event.endDate).toLocaleDateString()}
+                        </p>
+                      )}
+                      {event.location && (
+                        <p className="text-sm text-zinc-300 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {event.location}
+                        </p>
+                      )}
+                      {event.description && (
+                        <p className="text-sm text-zinc-300 mt-1">{event.description}</p>
+                      )}
+                    </div>
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          handleDeleteEvent(formatDateKey(selectedDate), event.id);
+                          setShowDayEventsModal(false);
+                        }}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

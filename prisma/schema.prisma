@@ -14,11 +14,13 @@ datasource db {
 model Event {
   id          Int      @id @default(autoincrement())
   title       String
-  time        String?
+  startTime   String?  // Start time (HH:MM format)
+  endTime     String?  // End time (HH:MM format)
   location    String?
   description String?
   color       String   @default("#3b82f6")
-  date        String   // Format: YYYY-MM-DD
+  startDate   String   // Format: YYYY-MM-DD
+  endDate     String?  // Format: YYYY-MM-DD (optional for multi-day events)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

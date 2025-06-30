@@ -16,7 +16,7 @@ function validateApiKey(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const events = await prisma.event.findMany({
-      orderBy: { date: 'asc' }
+      orderBy: { startDate: 'asc' }
     });
     
     return NextResponse.json(events);
@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, time, location, description, color, date } = body;
+    const { title, startTime, endTime, location, description, color, startDate, endDate } = body;
 
-    if (!title || !date) {
+    if (!title || !startDate) {
       return NextResponse.json(
-        { error: 'Title and date are required' },
+        { error: 'Title and start date are required' },
         { status: 400 }
       );
     }
@@ -51,11 +51,13 @@ export async function POST(request: NextRequest) {
     const event = await prisma.event.create({
       data: {
         title,
-        time: time || null,
+        startTime: startTime || null,
+        endTime: endTime || null,
         location: location || null,
         description: description || null,
         color: color || '#3b82f6',
-        date
+        startDate,
+        endDate: endDate || null
       }
     });
 
