@@ -57,19 +57,28 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-          const startDateTime = new Date(eventData.start_time);
-          const endDateTime = eventData.end_time ? new Date(eventData.end_time) : null;
+          // Extract time and date from ISO string while preserving original timezone
+          const startISOString = eventData.start_time;
+          const endISOString = eventData.end_time;
+          
+          // Extract time (HH:MM) from ISO string (e.g., "2025-08-08T00:00:00+08:00" -> "00:00")
+          const startTime = startISOString.substring(11, 16);
+          const endTime = endISOString ? endISOString.substring(11, 16) : null;
+          
+          // Extract date (YYYY-MM-DD) from ISO string
+          const startDate = startISOString.substring(0, 10);
+          const endDate = endISOString ? endISOString.substring(0, 10) : null;
           
           const event = await prisma.event.create({
             data: {
               title: eventData.title,
-              startTime: startDateTime.toTimeString().slice(0, 5),
-              endTime: endDateTime ? endDateTime.toTimeString().slice(0, 5) : null,
+              startTime,
+              endTime,
               location: eventData.location || null,
               description: eventData.description || null,
               color: eventData.color || '#3b82f6',
-              startDate: startDateTime.toISOString().slice(0, 10),
-              endDate: endDateTime ? endDateTime.toISOString().slice(0, 10) : null
+              startDate,
+              endDate
             }
           });
           
