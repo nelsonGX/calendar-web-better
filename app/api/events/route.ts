@@ -3,6 +3,44 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Retry utility function
+async function retryOperation<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      // Wait before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+    }
+  }
+  
+  throw lastError!;
+}
+
+// Check for duplicate events
+async function isDuplicate(title: string, startDate: string, startTime: string): Promise<boolean> {
+  const existing = await prisma.event.findFirst({
+    where: {
+      title,
+      startDate,
+      startTime
+    }
+  });
+  return !!existing;
+}
+
 function validateApiKey(request: NextRequest) {
   const apiKey = request.headers.get('x-api-key');
   const expectedApiKey = process.env.API_KEY;
@@ -43,6 +81,8 @@ export async function POST(request: NextRequest) {
     if (Array.isArray(body)) {
       const events = [];
       const errors = [];
+      const skipped = [];
+      const processedEvents = new Set<string>(); // Track events in current batch
 
       for (let i = 0; i < body.length; i++) {
         const eventData = body[i];
@@ -69,24 +109,57 @@ export async function POST(request: NextRequest) {
           const startDate = startISOString.substring(0, 10);
           const endDate = endISOString ? endISOString.substring(0, 10) : null;
           
-          const event = await prisma.event.create({
-            data: {
-              title: eventData.title,
-              startTime,
-              endTime,
-              location: eventData.location || null,
-              description: eventData.description || null,
-              color: eventData.color || '#3b82f6',
-              startDate,
-              endDate
-            }
-          });
+          // Create unique key for this event
+          const eventKey = `${eventData.title}|${startDate}|${startTime}`;
+          
+          // Check for duplicates in current batch
+          if (processedEvents.has(eventKey)) {
+            skipped.push({
+              index: i,
+              reason: 'Duplicate in current batch (same title, date, and time)',
+              data: eventData
+            });
+            continue;
+          }
+          
+          // Check for duplicates in database
+          const duplicate = await retryOperation(() => 
+            isDuplicate(eventData.title, startDate, startTime)
+          );
+          
+          if (duplicate) {
+            skipped.push({
+              index: i,
+              reason: 'Duplicate event already exists in database',
+              data: eventData
+            });
+            continue;
+          }
+          
+          // Mark as processed
+          processedEvents.add(eventKey);
+          
+          // Create event with retry logic
+          const event = await retryOperation(() => 
+            prisma.event.create({
+              data: {
+                title: eventData.title,
+                startTime,
+                endTime,
+                location: eventData.location || null,
+                description: eventData.description || null,
+                color: eventData.color || '#3b82f6',
+                startDate,
+                endDate
+              }
+            })
+          );
           
           events.push(event);
         } catch (eventError) {
           errors.push({
             index: i,
-            error: 'Failed to create event',
+            error: 'Failed to create event after retries',
             details: eventError instanceof Error ? eventError.message : 'Unknown error',
             data: eventData
           });
@@ -96,8 +169,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: events.length,
         failed: errors.length,
+        skipped: skipped.length,
         events,
-        errors
+        errors,
+        skippedEvents: skipped
       }, { status: 201 });
     } else {
       const { title, startTime, endTime, location, description, color, startDate, endDate } = body;
