@@ -14,9 +14,9 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onNextMonth
 }) => {
   return (
-    <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
       <div className="flex items-center gap-3">
-        <h1 className="text-3xl font-bold text-white">Calendar</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Calendar</h1>
         {isAdmin && (
           <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
             <Key className="w-3 h-3" />
@@ -31,7 +31,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-xl font-semibold text-zinc-200 min-w-48 text-center">
+        <h2 className="text-lg sm:text-xl font-semibold text-zinc-200 min-w-[200px] sm:min-w-48 text-center">
           {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
         </h2>
         <button

@@ -48,33 +48,72 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-7 gap-2 mb-2">
-        {daysOfWeek.map(day => (
-          <div key={day} className="text-center font-semibold text-zinc-300 py-2">
-            {day}
-          </div>
-        ))}
+      {/* Desktop view */}
+      <div className="hidden sm:block">
+        <div className="grid grid-cols-7 gap-2 mb-2">
+          {daysOfWeek.map(day => (
+            <div key={day} className="text-center font-semibold text-zinc-300 py-2">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-2">
+          {days.map((day, index) => {
+            const dateKey = day ? formatDateKey(new Date(currentDate.getFullYear(), currentDate.getMonth(), day)) : null;
+            const dayEvents = dateKey ? (events[dateKey] || []) : [];
+            
+            return (
+              <CalendarCell
+                key={index}
+                day={day}
+                currentDate={currentDate}
+                dayEvents={dayEvents}
+                isAdmin={isAdmin}
+                isToday={isToday(day)}
+                onDateClick={onDateClick}
+                onShowDayEvents={onShowDayEvents}
+                onRightClick={onRightClick}
+              />
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
-        {days.map((day, index) => {
-          const dateKey = day ? formatDateKey(new Date(currentDate.getFullYear(), currentDate.getMonth(), day)) : null;
-          const dayEvents = dateKey ? (events[dateKey] || []) : [];
-          
-          return (
-            <CalendarCell
-              key={index}
-              day={day}
-              currentDate={currentDate}
-              dayEvents={dayEvents}
-              isAdmin={isAdmin}
-              isToday={isToday(day)}
-              onDateClick={onDateClick}
-              onShowDayEvents={onShowDayEvents}
-              onRightClick={onRightClick}
-            />
-          );
-        })}
+      {/* Mobile view - horizontally scrollable */}
+      <div className="sm:hidden">
+        <div className="overflow-x-auto pb-2">
+          <div className="min-w-[700px]">
+            <div className="grid grid-cols-7 gap-2 mb-2">
+              {daysOfWeek.map(day => (
+                <div key={day} className="text-center font-semibold text-zinc-300 py-2 min-w-[90px]">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-2">
+              {days.map((day, index) => {
+                const dateKey = day ? formatDateKey(new Date(currentDate.getFullYear(), currentDate.getMonth(), day)) : null;
+                const dayEvents = dateKey ? (events[dateKey] || []) : [];
+                
+                return (
+                  <CalendarCell
+                    key={index}
+                    day={day}
+                    currentDate={currentDate}
+                    dayEvents={dayEvents}
+                    isAdmin={isAdmin}
+                    isToday={isToday(day)}
+                    onDateClick={onDateClick}
+                    onShowDayEvents={onShowDayEvents}
+                    onRightClick={onRightClick}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );

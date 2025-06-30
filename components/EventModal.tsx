@@ -26,7 +26,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-zinc-800 rounded-2xl p-6 max-w-md w-full shadow-2xl transform transition-all scale-100">
+      <div className="bg-zinc-800 rounded-2xl p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all scale-100">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-white">
             {selectedDate.toLocaleDateString('en-US', { 
