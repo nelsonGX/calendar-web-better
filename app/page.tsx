@@ -393,12 +393,12 @@ const Calendar = () => {
           min-h-24 p-2 border rounded-lg transition-all duration-200
           ${day && isAdmin ? 'hover:bg-zinc-800 cursor-pointer hover:shadow-md' : ''}
           ${day && !isAdmin ? 'cursor-default' : ''}
-          ${isToday(day) ? 'bg-blue-900 border-blue-400' : 'border-zinc-700'}
+          ${isToday(day) ? 'bg-orange-900/30 border-orange-400' : 'border-zinc-700'}
           `}
         >
           {day && (
           <>
-            <div className={`font-medium mb-1 ${isToday(day) ? 'text-blue-400' : 'text-zinc-200'}`}>
+            <div className={`font-medium mb-1 ${isToday(day) ? 'text-orange-400' : 'text-zinc-200'}`}>
             {day}
             </div>
             <div className="space-y-1">
@@ -406,7 +406,7 @@ const Calendar = () => {
               <div
               key={event.id}
               className="text-xs p-1 rounded truncate hover:opacity-80 transition-opacity cursor-pointer"
-              style={{ backgroundColor: event.color + '40', color: event.color }}
+              style={{ backgroundColor: event.color + '40', color: "white" }}
               onClick={(e) => {
                 e.stopPropagation();
                 handleShowDayEvents(day, dayEvents);
@@ -498,7 +498,7 @@ const Calendar = () => {
                 <div className="flex gap-1">
                   <button
                     onClick={() => handleEditEvent(event)}
-                    className="text-blue-400 hover:text-blue-300 transition-colors"
+                    className="text-orange-400 hover:text-orange-300 transition-colors"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
@@ -526,7 +526,7 @@ const Calendar = () => {
           placeholder="Event title"
           value={eventForm.title}
           onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-          className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
+          className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white placeholder-zinc-400"
           />
           <div className="grid grid-cols-2 gap-2">
             <input
@@ -534,14 +534,14 @@ const Calendar = () => {
             placeholder="Start time"
             value={eventForm.startTime}
             onChange={(e) => setEventForm({ ...eventForm, startTime: e.target.value })}
-            className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+            className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white"
             />
             <input
             type="time"
             placeholder="End time"
             value={eventForm.endTime}
             onChange={(e) => setEventForm({ ...eventForm, endTime: e.target.value })}
-            className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+            className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white"
             />
           </div>
           <input
@@ -549,20 +549,20 @@ const Calendar = () => {
           placeholder="End date (optional)"
           value={eventForm.endDate}
           onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })}
-          className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+          className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white"
           />
           <input
           type="text"
           placeholder="Location"
           value={eventForm.location}
           onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-          className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
+          className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white placeholder-zinc-400"
           />
           <textarea
           placeholder="Description"
           value={eventForm.description}
           onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-          className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-zinc-700 text-white placeholder-zinc-400"
+          className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none bg-zinc-700 text-white placeholder-zinc-400"
           />
           <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-zinc-200">Color:</label>
@@ -576,7 +576,7 @@ const Calendar = () => {
           <button
           onClick={handleAddEvent}
           disabled={!eventForm.title}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
           <Plus className="w-4 h-4" />
           Add Event
@@ -622,7 +622,7 @@ const Calendar = () => {
                 placeholder="Event title"
                 value={eventForm.title}
                 onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white placeholder-zinc-400"
               />
               <div className="grid grid-cols-2 gap-2">
                 <input
@@ -630,14 +630,14 @@ const Calendar = () => {
                   placeholder="Start time"
                   value={eventForm.startTime}
                   onChange={(e) => setEventForm({ ...eventForm, startTime: e.target.value })}
-                  className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+                  className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white"
                 />
                 <input
                   type="time"
                   placeholder="End time"
                   value={eventForm.endTime}
                   onChange={(e) => setEventForm({ ...eventForm, endTime: e.target.value })}
-                  className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+                  className="px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white"
                 />
               </div>
               <input
@@ -645,20 +645,20 @@ const Calendar = () => {
                 placeholder="End date (optional)"
                 value={eventForm.endDate}
                 onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white"
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white"
               />
               <input
                 type="text"
                 placeholder="Location"
                 value={eventForm.location}
                 onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white placeholder-zinc-400"
               />
               <textarea
                 placeholder="Description"
                 value={eventForm.description}
                 onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-zinc-700 text-white placeholder-zinc-400"
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none bg-zinc-700 text-white placeholder-zinc-400"
               />
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-zinc-200">Color:</label>
@@ -672,7 +672,7 @@ const Calendar = () => {
               <button
                 onClick={handleUpdateEvent}
                 disabled={!eventForm.title}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Edit className="w-4 h-4" />
                 Update Event
@@ -699,14 +699,14 @@ const Calendar = () => {
                 placeholder="API Key"
                 value={tempApiKey}
                 onChange={(e) => setTempApiKey(e.target.value)}
-                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-700 text-white placeholder-zinc-400"
+                className="w-full px-3 py-2 border border-zinc-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-zinc-700 text-white placeholder-zinc-400"
                 onKeyPress={(e) => e.key === 'Enter' && handleApiKeySubmit()}
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleApiKeySubmit}
                   disabled={!tempApiKey.trim()}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed"
+                  className="flex-1 bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors disabled:bg-zinc-600 disabled:cursor-not-allowed"
                 >
                   Submit
                 </button>
@@ -786,7 +786,7 @@ const Calendar = () => {
                             handleEditEvent(event);
                             setShowDayEventsModal(false);
                           }}
-                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                          className="text-orange-400 hover:text-orange-300 transition-colors"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -836,8 +836,8 @@ const Calendar = () => {
             />
             <button
               onClick={() => handleQuickColorChange(contextMenu.event, '#3b82f6')}
-              className="w-6 h-6 rounded-full bg-blue-500 hover:bg-blue-400 transition-colors border-2 border-transparent hover:border-white"
-              title="Blue"
+              className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-400 transition-colors border-2 border-transparent hover:border-white"
+              title="orange"
             />
           </div>
           
