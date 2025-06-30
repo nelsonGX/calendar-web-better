@@ -160,7 +160,8 @@ export const useCalendarActions = (
   const handleQuickColorChange = async (
     event: Event,
     color: string,
-    setContextMenu: (menu: unknown) => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setContextMenu: (menu: any) => void
   ) => {
     if (!isAdmin) return;
 
@@ -197,7 +198,8 @@ export const useCalendarActions = (
   const handleRightClick = (
     e: React.MouseEvent,
     event: Event,
-    setContextMenu: (menu: unknown) => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setContextMenu: (menu: any) => void
   ) => {
     if (!isAdmin) return;
     
