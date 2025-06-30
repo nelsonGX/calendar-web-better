@@ -27,6 +27,7 @@ const Calendar = () => {
   const [showDayEventsModal, setShowDayEventsModal] = useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = useState<Event[]>([]);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; event: Event } | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [tempApiKey, setTempApiKey] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -62,6 +63,11 @@ const Calendar = () => {
     }
     
     fetchEvents();
+
+    // Close context menu on click outside
+    const handleClickOutside = () => setContextMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   const fetchEvents = async () => {
@@ -256,6 +262,52 @@ const Calendar = () => {
     }
   };
 
+  const handleQuickColorChange = async (event: Event, color: string) => {
+    if (!isAdmin) return;
+
+    try {
+      const response = await fetch(`/api/events/${event.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify({
+          title: event.title,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          location: event.location,
+          description: event.description,
+          color: color,
+          startDate: event.startDate,
+          endDate: event.endDate
+        })
+      });
+
+      if (response.ok) {
+        await fetchEvents();
+        setContextMenu(null);
+      } else {
+        console.error('Failed to update event color');
+      }
+    } catch (error) {
+      console.error('Error updating event color:', error);
+    }
+  };
+
+  const handleRightClick = (e: React.MouseEvent, event: Event) => {
+    if (!isAdmin) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      event: event
+    });
+  };
+
   const handleDeleteEvent = async (dateKey: string, eventId: number) => {
     if (!isAdmin) return;
     
@@ -359,6 +411,7 @@ const Calendar = () => {
                 e.stopPropagation();
                 handleShowDayEvents(day, dayEvents);
               }}
+              onContextMenu={(e) => handleRightClick(e, event)}
               >
               {event.title}
               {event.startTime && ` ${event.startTime}`}
@@ -415,6 +468,7 @@ const Calendar = () => {
               key={event.id}
               className="p-3 rounded-lg border border-zinc-600 hover:shadow-md transition-shadow bg-zinc-700"
               style={{ borderLeftColor: event.color, borderLeftWidth: '4px' }}
+              onContextMenu={(e) => handleRightClick(e, event)}
             >
               <div className="flex justify-between items-start">
               <div className="flex-1">
@@ -699,6 +753,7 @@ const Calendar = () => {
                   key={event.id}
                   className="p-3 rounded-lg border border-zinc-600 bg-zinc-700"
                   style={{ borderLeftColor: event.color, borderLeftWidth: '4px' }}
+                  onContextMenu={(e) => handleRightClick(e, event)}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -751,6 +806,51 @@ const Calendar = () => {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && isAdmin && (
+        <div
+          className="fixed bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg py-2 z-50"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-3 py-1 text-xs text-zinc-400 font-medium">Quick Actions</div>
+          <div className="border-t border-zinc-600 my-1"></div>
+          
+          <div className="px-3 py-1 text-xs text-zinc-400 font-medium">Change Color</div>
+          <div className="flex gap-1 px-3 py-2">
+            <button
+              onClick={() => handleQuickColorChange(contextMenu.event, '#ef4444')}
+              className="w-6 h-6 rounded-full bg-red-500 hover:bg-red-400 transition-colors border-2 border-transparent hover:border-white"
+              title="Red"
+            />
+            <button
+              onClick={() => handleQuickColorChange(contextMenu.event, '#22c55e')}
+              className="w-6 h-6 rounded-full bg-green-500 hover:bg-green-400 transition-colors border-2 border-transparent hover:border-white"
+              title="Green"
+            />
+            <button
+              onClick={() => handleQuickColorChange(contextMenu.event, '#3b82f6')}
+              className="w-6 h-6 rounded-full bg-blue-500 hover:bg-blue-400 transition-colors border-2 border-transparent hover:border-white"
+              title="Blue"
+            />
+          </div>
+          
+          <div className="border-t border-zinc-600 my-1"></div>
+          <button
+            onClick={() => {
+              handleDeleteEvent('', contextMenu.event.id);
+              setContextMenu(null);
+            }}
+            className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-zinc-700 transition-colors"
+          >
+            Quick Delete
+          </button>
         </div>
       )}
     </div>
