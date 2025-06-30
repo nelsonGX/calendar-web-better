@@ -51,13 +51,29 @@ function validateApiKey(request: NextRequest) {
 
 export async function GET() {
   try {
-    const events = await prisma.event.findMany({
-      orderBy: { startDate: 'asc' }
+    const events = await retryOperation(async () => {
+      return await prisma.event.findMany({
+        orderBy: { startDate: 'asc' }
+      });
     });
     
     return NextResponse.json(events);
   } catch (error) {
     console.error('Error fetching events:', error);
+    
+    // If it's a prepared statement error, try disconnecting and reconnecting
+    if (error instanceof Error && error.message.includes('prepared statement')) {
+      try {
+        await prisma.$disconnect();
+        const events = await prisma.event.findMany({
+          orderBy: { startDate: 'asc' }
+        });
+        return NextResponse.json(events);
+      } catch (retryError) {
+        console.error('Retry after disconnect failed:', retryError);
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Failed to fetch events' },
       { status: 500 }
