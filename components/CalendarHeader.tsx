@@ -16,7 +16,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white">Calendar</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Nelson{"'"}s Calendar</h1>
         {isAdmin && (
           <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
             <Key className="w-3 h-3" />
