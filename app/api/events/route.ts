@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createServiceClient } from '@/utils/supabase/service';
 
 // Retry utility function
 async function retryOperation<T>(
@@ -29,14 +29,16 @@ async function retryOperation<T>(
 
 // Check for duplicate events
 async function isDuplicate(title: string, startDate: string, startTime: string): Promise<boolean> {
-  const existing = await prisma.event.findFirst({
-    where: {
-      title,
-      startDate,
-      startTime
-    }
-  });
-  return !!existing;
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from('Event')
+    .select('*')
+    .eq('title', title)
+    .eq('startDate', startDate)
+    .eq('startTime', startTime)
+    .limit(1);
+  
+  return !!data && data.length > 0;
 }
 
 function validateApiKey(request: NextRequest) {
@@ -51,9 +53,15 @@ function validateApiKey(request: NextRequest) {
 
 export async function GET() {
   try {
-    const events = await prisma.event.findMany({
-      orderBy: { startDate: 'asc' }
-    });
+    const supabase = createServiceClient();
+    const { data: events, error } = await supabase
+      .from('Event')
+      .select('*')
+      .order('startDate', { ascending: true });
+
+    if (error) {
+      throw error;
+    }
     
     return NextResponse.json(events);
   } catch (error) {
@@ -138,20 +146,25 @@ export async function POST(request: NextRequest) {
           processedEvents.add(eventKey);
           
           // Create event with retry logic
-          const event = await retryOperation(() => 
-            prisma.event.create({
-              data: {
-                title: eventData.title,
-                startTime,
-                endTime,
-                location: eventData.location || null,
-                description: eventData.description || null,
-                color: eventData.color || '#3b82f6',
-                startDate,
-                endDate
-              }
+          const supabase = createServiceClient();
+          const { data: event, error: createError } = await supabase
+            .from('Event')
+            .insert({
+              title: eventData.title,
+              startTime,
+              endTime,
+              location: eventData.location || null,
+              description: eventData.description || null,
+              color: eventData.color || '#3b82f6',
+              startDate,
+              endDate
             })
-          );
+            .select()
+            .single();
+
+          if (createError) {
+            throw createError;
+          }
           
           events.push(event);
         } catch (eventError) {
@@ -182,8 +195,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const event = await prisma.event.create({
-        data: {
+      const supabase = createServiceClient();
+      const { data: event, error } = await supabase
+        .from('Event')
+        .insert({
           title,
           startTime: startTime || null,
           endTime: endTime || null,
@@ -192,8 +207,13 @@ export async function POST(request: NextRequest) {
           color: color || '#3b82f6',
           startDate,
           endDate: endDate || null
-        }
-      });
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
 
       return NextResponse.json(event, { status: 201 });
     }

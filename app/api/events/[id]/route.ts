@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { createServiceClient } from '@/utils/supabase/service';
 
 function validateApiKey(request: NextRequest) {
   const apiKey = request.headers.get('x-api-key');
@@ -43,9 +43,10 @@ export async function PUT(
       );
     }
 
-    const updatedEvent = await prisma.event.update({
-      where: { id: eventId },
-      data: {
+    const supabase = createServiceClient();
+    const { data: updatedEvent, error } = await supabase
+      .from('Event')
+      .update({
         title,
         startTime,
         endTime,
@@ -54,8 +55,14 @@ export async function PUT(
         color,
         startDate,
         endDate
-      }
-    });
+      })
+      .eq('id', eventId)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
 
     return NextResponse.json(updatedEvent);
   } catch (error) {
@@ -89,9 +96,15 @@ export async function DELETE(
       );
     }
 
-    await prisma.event.delete({
-      where: { id: eventId }
-    });
+    const supabase = createServiceClient();
+    const { error } = await supabase
+      .from('Event')
+      .delete()
+      .eq('id', eventId);
+
+    if (error) {
+      throw error;
+    }
 
     return NextResponse.json({ message: 'Event deleted successfully' });
   } catch (error) {
