@@ -21,7 +21,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 
   return (
     <div
-      className="fixed bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg py-2 z-50"
+      className="fixed bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg py-2 z-50 animate-popIn"
       style={{
         left: `${contextMenu.x}px`,
         top: `${contextMenu.y}px`,

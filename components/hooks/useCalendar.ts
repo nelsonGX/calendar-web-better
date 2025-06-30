@@ -15,6 +15,7 @@ export const useCalendar = () => {
   const [apiKey, setApiKey] = useState('');
   const [tempApiKey, setTempApiKey] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [eventForm, setEventForm] = useState<EventForm>({
     title: '',
     startTime: '',
@@ -47,6 +48,7 @@ export const useCalendar = () => {
   }, []);
 
   const fetchEvents = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('/api/events');
       if (response.ok) {
@@ -80,6 +82,8 @@ export const useCalendar = () => {
       }
     } catch (error) {
       console.error('Error fetching events:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -114,6 +118,7 @@ export const useCalendar = () => {
     apiKey,
     tempApiKey,
     isAdmin,
+    isLoading,
     eventForm,
     
     // Setters
@@ -130,6 +135,7 @@ export const useCalendar = () => {
     setApiKey,
     setTempApiKey,
     setIsAdmin,
+    setIsLoading,
     setEventForm,
     
     // Utils

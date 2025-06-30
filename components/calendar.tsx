@@ -26,6 +26,7 @@ const Calendar = () => {
     apiKey,
     tempApiKey,
     isAdmin,
+    isLoading,
     eventForm,
     setCurrentDate,
     setSelectedDate,
@@ -39,6 +40,7 @@ const Calendar = () => {
     setApiKey,
     setTempApiKey,
     setIsAdmin,
+    setIsLoading,
     setEventForm,
     fetchEvents,
     formatDateKey,
@@ -57,7 +59,7 @@ const Calendar = () => {
     handleQuickColorChange,
     handleRightClick,
     handleDeleteEvent
-  } = useCalendarActions(apiKey, isAdmin, fetchEvents, formatDateKey, resetEventForm);
+  } = useCalendarActions(apiKey, isAdmin, fetchEvents, formatDateKey, resetEventForm, setIsLoading);
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden">
@@ -68,14 +70,21 @@ const Calendar = () => {
         onNextMonth={() => handleNextMonth(currentDate, setCurrentDate)}
       />
 
-      <CalendarGrid
-        currentDate={currentDate}
-        events={events}
-        isAdmin={isAdmin}
-        onDateClick={(day) => handleDateClick(day, currentDate, setSelectedDate, setShowEventModal)}
-        onShowDayEvents={(day, dayEvents) => handleShowDayEvents(day, dayEvents, currentDate, setSelectedDate, setSelectedDayEvents, setShowDayEventsModal)}
-        onRightClick={(e, event) => handleRightClick(e, event, setContextMenu)}
-      />
+      <div className="relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-zinc-900 bg-opacity-50 flex items-center justify-center z-10 rounded-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+          </div>
+        )}
+        <CalendarGrid
+          currentDate={currentDate}
+          events={events}
+          isAdmin={isAdmin}
+          onDateClick={(day) => handleDateClick(day, currentDate, setSelectedDate, setShowEventModal)}
+          onShowDayEvents={(day, dayEvents) => handleShowDayEvents(day, dayEvents, currentDate, setSelectedDate, setSelectedDayEvents, setShowDayEventsModal)}
+          onRightClick={(e, event) => handleRightClick(e, event, setContextMenu)}
+        />
+      </div>
 
       <EventModal
         show={showEventModal}

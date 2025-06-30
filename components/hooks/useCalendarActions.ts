@@ -5,7 +5,8 @@ export const useCalendarActions = (
   isAdmin: boolean,
   fetchEvents: () => Promise<void>,
   formatDateKey: (date: Date) => string,
-  resetEventForm: () => void
+  resetEventForm: () => void,
+  setIsLoading?: (loading: boolean) => void
 ) => {
   const handleApiKeySubmit = (
     tempApiKey: string,
@@ -70,6 +71,7 @@ export const useCalendarActions = (
     setShowEventModal: (show: boolean) => void
   ) => {
     if (selectedDate && eventForm.title && isAdmin) {
+      setIsLoading?.(true);
       try {
         const response = await fetch('/api/events', {
           method: 'POST',
@@ -93,6 +95,8 @@ export const useCalendarActions = (
         }
       } catch (error) {
         console.error('Error creating event:', error);
+      } finally {
+        setIsLoading?.(false);
       }
     }
   };
@@ -128,6 +132,7 @@ export const useCalendarActions = (
   ) => {
     if (!editingEvent || !eventForm.title || !isAdmin) return;
 
+    setIsLoading?.(true);
     try {
       const response = await fetch(`/api/events/${editingEvent.id}`, {
         method: 'PUT',
@@ -154,6 +159,8 @@ export const useCalendarActions = (
       }
     } catch (error) {
       console.error('Error updating event:', error);
+    } finally {
+      setIsLoading?.(false);
     }
   };
 
@@ -165,6 +172,7 @@ export const useCalendarActions = (
   ) => {
     if (!isAdmin) return;
 
+    setIsLoading?.(true);
     try {
       const response = await fetch(`/api/events/${event.id}`, {
         method: 'PUT',
@@ -192,6 +200,8 @@ export const useCalendarActions = (
       }
     } catch (error) {
       console.error('Error updating event color:', error);
+    } finally {
+      setIsLoading?.(false);
     }
   };
 
@@ -216,6 +226,7 @@ export const useCalendarActions = (
   const handleDeleteEvent = async (eventId: number) => {
     if (!isAdmin) return;
     
+    setIsLoading?.(true);
     try {
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'DELETE',
@@ -231,6 +242,8 @@ export const useCalendarActions = (
       }
     } catch (error) {
       console.error('Error deleting event:', error);
+    } finally {
+      setIsLoading?.(false);
     }
   };
 

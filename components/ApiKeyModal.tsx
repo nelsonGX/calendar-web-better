@@ -18,8 +18,8 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-      <div className="bg-zinc-800 rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 animate-fadeIn">
+      <div className="bg-zinc-800 rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl animate-slideIn">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
             <Key className="w-5 h-5" />
