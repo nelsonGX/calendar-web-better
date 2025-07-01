@@ -32,3 +32,8 @@ curl -X POST 'https://your-vercel-deployment.vercel.app/api/events' \
             }
         ]'
 ```
+
+# Editing On The App
+1. nevigate to the admin panel by adding query `admin=true`. example: `https://(your calendar url)?admin=true`
+2. enter the API key you set inside environment variable
+3. now you can edit events on the website
