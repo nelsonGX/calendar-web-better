@@ -45,8 +45,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         />
         <button
           onClick={() => handleColorChange('#3b82f6')}
-          className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-400 transition-colors border-2 border-transparent hover:border-white"
-          title="Orange"
+          className="w-6 h-6 rounded-full bg-blue-500 hover:bg-blue-400 transition-colors border-2 border-transparent hover:border-white"
+          title="Blue"
         />
       </div>
       
